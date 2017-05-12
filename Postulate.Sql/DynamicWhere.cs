@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Postulate.Sql
 {
-    public static class Sql
+    public static class DynamicWhere
     {
         internal const string WhereReplaceToken = "{*}";
 
@@ -21,7 +21,8 @@ namespace Postulate.Sql
             return connection.Query<T>(BuildDynamicQuery(query, parameters), parameters, transaction, buffered, commandTimeout, commandType);
         }
 
-        public static async Task<IEnumerable<T>> DynamicQueryAsync<T>(this IDbConnection connection, string query, object parameters,
+        public static async Task<IEnumerable<T>> DynamicQueryAsync<T>(
+            this IDbConnection connection, string query, object parameters,
             IDbTransaction transaction = null, bool buffered = true, int? commandTimeout = null, CommandType? commandType = null)
         {
             return await connection.QueryAsync<T>(BuildDynamicQuery(query, parameters), parameters, transaction, commandTimeout, commandType);
@@ -41,6 +42,16 @@ namespace Postulate.Sql
                 parameters = null;
                 return sql;
             }
+        }
+
+        public static string AndWhereClause(IEnumerable<WhereClauseTerm> terms, out DynamicParameters parameters)
+        {
+            return WhereClauseInner("AND ", terms, out parameters);
+        }
+
+        public static string WhereClause(IEnumerable<WhereClauseTerm> terms, out DynamicParameters parameters)
+        {
+            return WhereClauseInner("WHERE ", terms, out parameters);
         }
 
         private static IEnumerable<WhereClauseTerm> ParseWhereBlock(string sql, object parameters, out string queryTemplate, out string prepend)
@@ -99,16 +110,6 @@ namespace Postulate.Sql
             if (value.StartsWith("{")) result = result.Substring(1);
             if (value.EndsWith("}")) result = result.Substring(0, result.Length - 1);
             return result.Trim();
-        }
-
-        public static string AndWhereClause(IEnumerable<WhereClauseTerm> terms, out DynamicParameters parameters)
-        {
-            return WhereClauseInner("AND ", terms, out parameters);
-        }
-
-        public static string WhereClause(IEnumerable<WhereClauseTerm> terms, out DynamicParameters parameters)
-        {
-            return WhereClauseInner("WHERE ", terms, out parameters);
         }
 
         private static string WhereClauseBase(string prepend, IEnumerable<WhereClauseTerm> terms, out IEnumerable<WhereClauseTerm> included)
