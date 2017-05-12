@@ -38,8 +38,7 @@ namespace Postulate.Sql
                 return queryTemplate.Replace(WhereReplaceToken, WhereClauseBase(prepend, terms, out includedTerms));
             }
             else
-            {
-                parameters = null;
+            {                
                 return sql;
             }
         }
