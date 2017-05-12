@@ -111,10 +111,10 @@ namespace Postulate.Sql
             return ParseWhereBlock(sql, props, out queryTemplate, out prepend);
         }
 
-        private static Dictionary<string, object> ObjectToDictionary(object parameters)
+        public static Dictionary<string, object> ObjectToDictionary(object @object)
         {
-            Type paramType = parameters.GetType();
-            Dictionary<string, object> props = paramType.GetProperties().ToDictionary(pi => pi.Name, pi => pi.GetValue(parameters));
+            Type paramType = @object.GetType();
+            Dictionary<string, object> props = paramType.GetProperties().ToDictionary(pi => pi.Name, pi => pi.GetValue(@object));
             return props;
         }
 
