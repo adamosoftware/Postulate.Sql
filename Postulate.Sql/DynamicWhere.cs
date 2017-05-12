@@ -38,15 +38,9 @@ namespace Postulate.Sql
         {
             string queryTemplate, prepend;
             var terms = ParseWhereBlock(sql, parameters, out queryTemplate, out prepend);
-            if (terms?.Any() ?? false)
-            {
-                IEnumerable<WhereClauseTerm> includedTerms;
-                return queryTemplate.Replace(WhereReplaceToken, WhereClauseBase(prepend, terms, out includedTerms));
-            }
-            else
-            {
-                return sql;
-            }
+            
+            IEnumerable<WhereClauseTerm> includedTerms;
+            return queryTemplate.Replace(WhereReplaceToken, WhereClauseBase(prepend, terms, out includedTerms));            
         }
 
         public static string AndWhereClause(IEnumerable<WhereClauseTerm> terms, out DynamicParameters parameters)
@@ -114,7 +108,9 @@ namespace Postulate.Sql
         public static Dictionary<string, object> ObjectToDictionary(object @object)
         {
             Type paramType = @object.GetType();
-            Dictionary<string, object> props = paramType.GetProperties().ToDictionary(pi => pi.Name, pi => pi.GetValue(@object));
+            Dictionary<string, object> props = paramType.GetProperties()
+                .Where(pi => !string.IsNullOrEmpty(pi.GetValue(@object).ToString()))
+                .ToDictionary(pi => pi.Name, pi => pi.GetValue(@object));
             return props;
         }
 
