@@ -32,7 +32,7 @@ namespace Postulate.Sql
         {
             string queryTemplate, prepend;            
             var terms = ParseWhereBlock(sql, parameters, out queryTemplate, out prepend);
-            if (terms.Any())
+            if (terms?.Any() ?? false)
             {
                 IEnumerable<WhereClauseTerm> includedTerms;
                 return queryTemplate.Replace(WhereReplaceToken, WhereClauseBase(prepend, terms, out includedTerms));
