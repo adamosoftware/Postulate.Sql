@@ -18,19 +18,25 @@ namespace Postulate.Sql
             this IDbConnection connection, string query, object parameters, 
             IDbTransaction transaction = null, bool buffered = true, int? commandTimeout = null, CommandType? commandType = null)
         {
-            return connection.Query<T>(BuildDynamicQuery(query, parameters), parameters, transaction, buffered, commandTimeout, commandType);
+            return connection.Query<T>(BuildQuery(query, parameters), parameters, transaction, buffered, commandTimeout, commandType);
         }
 
         public static async Task<IEnumerable<T>> DynamicQueryAsync<T>(
             this IDbConnection connection, string query, object parameters,
             IDbTransaction transaction = null, bool buffered = true, int? commandTimeout = null, CommandType? commandType = null)
         {
-            return await connection.QueryAsync<T>(BuildDynamicQuery(query, parameters), parameters, transaction, commandTimeout, commandType);
+            return await connection.QueryAsync<T>(BuildQuery(query, parameters), parameters, transaction, commandTimeout, commandType);
         }
 
-        public static string BuildDynamicQuery(string sql, object parameters)
+        public static string BuildQuery(string sql, object parameters)
         {
-            string queryTemplate, prepend;            
+            var dictionary = ObjectToDictionary(parameters);
+            return BuildQuery(sql, dictionary);
+        }
+
+        public static string BuildQuery(string sql, Dictionary<string, object> parameters)
+        {
+            string queryTemplate, prepend;
             var terms = ParseWhereBlock(sql, parameters, out queryTemplate, out prepend);
             if (terms?.Any() ?? false)
             {
@@ -38,7 +44,7 @@ namespace Postulate.Sql
                 return queryTemplate.Replace(WhereReplaceToken, WhereClauseBase(prepend, terms, out includedTerms));
             }
             else
-            {                
+            {
                 return sql;
             }
         }
@@ -53,14 +59,14 @@ namespace Postulate.Sql
             return WhereClauseInner("WHERE ", terms, out parameters);
         }
 
-        private static IEnumerable<WhereClauseTerm> ParseWhereBlock(string sql, object parameters, out string queryTemplate, out string prepend)
-        {            
+        private static IEnumerable<WhereClauseTerm> ParseWhereBlock(string sql, Dictionary<string, object> parameters, out string queryTemplate, out string prepend)
+        {
             Dictionary<string, string> prependMap = new Dictionary<string, string>()
             {
                 { @"where", "WHERE " },
                 { @"andWhere", "AND " }
             };
-            
+
             foreach (string blockStart in prependMap.Keys)
             {
                 var startMatch = Regex.Match(sql, blockStart + @"\s*{\s*{");
@@ -77,17 +83,13 @@ namespace Postulate.Sql
                         string termBlock = "{ " + sql.Substring(startMatch.Index + startMatch.Length, endMatch.Index) + " }";
                         var termMatches = Regex.Matches(termBlock, "(?<!{)({[^{\r\n]*})(?!{)");
 
-                        Type paramType = parameters.GetType();
-                        Dictionary<string, PropertyInfo> props = paramType.GetProperties().ToDictionary(pi => pi.Name);
                         foreach (Match match in termMatches)
                         {
                             string paramName = WhereClauseTerm.GetParameterName(match.Value).Substring(1);
-                            if (props.ContainsKey(paramName))
+                            if (parameters.ContainsKey(paramName))
                             {
-                                terms.Add(new WhereClauseTerm(
-                                    props[paramName].GetValue(parameters), 
-                                    TrimBraces(match.Value)));
-                            }                            
+                                terms.Add(new WhereClauseTerm(parameters[paramName], TrimBraces(match.Value)));
+                            }
                         }
 
                         queryTemplate = sql.Substring(0, leftIndex) + WhereReplaceToken + sql.Substring(rightIndex);
@@ -101,6 +103,19 @@ namespace Postulate.Sql
             queryTemplate = sql;
             prepend = null;
             return null;
+        }
+
+        private static IEnumerable<WhereClauseTerm> ParseWhereBlock(string sql, object parameters, out string queryTemplate, out string prepend)
+        {
+            Dictionary<string, object> props = ObjectToDictionary(parameters);
+            return ParseWhereBlock(sql, props, out queryTemplate, out prepend);
+        }
+
+        private static Dictionary<string, object> ObjectToDictionary(object parameters)
+        {
+            Type paramType = parameters.GetType();
+            Dictionary<string, object> props = paramType.GetProperties().ToDictionary(pi => pi.Name, pi => pi.GetValue(parameters));
+            return props;
         }
 
         private static string TrimBraces(string value)
