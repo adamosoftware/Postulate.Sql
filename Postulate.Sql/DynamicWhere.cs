@@ -30,7 +30,7 @@ namespace Postulate.Sql
 
         public static string BuildQuery(string sql, object parameters)
         {
-            var dictionary = ObjectToDictionary(parameters);
+            var dictionary = ToDictionary(parameters);
             return BuildQuery(sql, dictionary);
         }
 
@@ -57,8 +57,8 @@ namespace Postulate.Sql
         {
             Dictionary<string, string> prependMap = new Dictionary<string, string>()
             {
-                { @"where", "WHERE " },
-                { @"andWhere", "AND " }
+                { "where", "WHERE " },
+                { "andWhere", "AND " }
             };
 
             foreach (string blockStart in prependMap.Keys)
@@ -101,17 +101,24 @@ namespace Postulate.Sql
 
         private static IEnumerable<WhereClauseTerm> ParseWhereBlock(string sql, object parameters, out string queryTemplate, out string prepend)
         {
-            Dictionary<string, object> props = ObjectToDictionary(parameters);
+            Dictionary<string, object> props = ToDictionary(parameters);
             return ParseWhereBlock(sql, props, out queryTemplate, out prepend);
         }
 
-        public static Dictionary<string, object> ObjectToDictionary(object @object)
+        public static Dictionary<string, object> ToDictionary(this object @object)
         {
             Type paramType = @object.GetType();
             Dictionary<string, object> props = paramType.GetProperties()
                 .Where(pi => !string.IsNullOrEmpty(pi.GetValue(@object).ToString()))
                 .ToDictionary(pi => pi.Name, pi => pi.GetValue(@object));
             return props;
+        }
+
+        public static Dictionary<string, object> ToDictionary(this IEnumerable<IDataParameter> parameters)
+        {
+            return parameters
+                .Where(p => p.Value != null && p.Value != DBNull.Value)
+                .ToDictionary(p => p.ParameterName, p => p.Value);
         }
 
         private static string TrimBraces(string value)
