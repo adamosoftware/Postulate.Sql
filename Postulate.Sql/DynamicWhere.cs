@@ -47,21 +47,21 @@ namespace Postulate.Sql
             string queryTemplate, prepend;
             var terms = ParseWhereBlock(sql, parameters, out queryTemplate, out prepend);
             
-            IEnumerable<WhereClauseTerm> includedTerms;
+            IEnumerable<Term> includedTerms;
             return queryTemplate.Replace(WhereReplaceToken, WhereClauseBase(prepend, terms, out includedTerms));            
         }
 
-        public static string AndWhereClause(IEnumerable<WhereClauseTerm> terms, out DynamicParameters parameters)
+        public static string AndClause(IEnumerable<Term> terms, out DynamicParameters parameters)
         {
             return WhereClauseInner("AND ", terms, out parameters);
         }
 
-        public static string WhereClause(IEnumerable<WhereClauseTerm> terms, out DynamicParameters parameters)
+        public static string Clause(IEnumerable<Term> terms, out DynamicParameters parameters)
         {
             return WhereClauseInner("WHERE ", terms, out parameters);
         }
 
-        private static IEnumerable<WhereClauseTerm> ParseWhereBlock(string sql, Dictionary<string, object> parameters, out string queryTemplate, out string prepend)
+        private static IEnumerable<Term> ParseWhereBlock(string sql, Dictionary<string, object> parameters, out string queryTemplate, out string prepend)
         {
             Dictionary<string, string> prependMap = new Dictionary<string, string>()
             {
@@ -80,17 +80,17 @@ namespace Postulate.Sql
                     if (endMatch != null)
                     {
                         int rightIndex = leftIndex + startMatch.Length + endMatch.Index + endMatch.Length;
-                        List<WhereClauseTerm> terms = new List<WhereClauseTerm>();
+                        List<Term> terms = new List<Term>();
 
                         string termBlock = "{ " + sql.Substring(startMatch.Index + startMatch.Length, endMatch.Index) + " }";
                         var termMatches = Regex.Matches(termBlock, "(?<!{)({[^{\r\n]*})(?!{)");
 
                         foreach (Match match in termMatches)
                         {
-                            string paramName = WhereClauseTerm.GetParameterName(match.Value).Substring(1);
+                            string paramName = Term.GetParameterName(match.Value).Substring(1);
                             if (parameters.ContainsKey(paramName))
                             {
-                                terms.Add(new WhereClauseTerm(parameters[paramName], TrimBraces(match.Value)));
+                                terms.Add(new Term(parameters[paramName], TrimBraces(match.Value)));
                             }
                         }
 
@@ -107,7 +107,7 @@ namespace Postulate.Sql
             return null;
         }
 
-        private static IEnumerable<WhereClauseTerm> ParseWhereBlock(string sql, object parameters, out string queryTemplate, out string prepend)
+        private static IEnumerable<Term> ParseWhereBlock(string sql, object parameters, out string queryTemplate, out string prepend)
         {
             Dictionary<string, object> props = ToDictionary(parameters);
             return ParseWhereBlock(sql, props, out queryTemplate, out prepend);
@@ -147,46 +147,46 @@ namespace Postulate.Sql
             return result.Trim();
         }
 
-        private static string WhereClauseBase(string prepend, IEnumerable<WhereClauseTerm> terms, out IEnumerable<WhereClauseTerm> included)
+        private static string WhereClauseBase(string prepend, IEnumerable<Term> terms, out IEnumerable<Term> included)
         {
             included = terms.Where(t => t.Value != null);
             if (!included.Any()) return null;
             return prepend + string.Join(" AND ", included.Select(t => t.Expression));
         }
 
-        private static string WhereClauseInner(string prepend, IEnumerable<WhereClauseTerm> terms, out DynamicParameters parameters)
+        private static string WhereClauseInner(string prepend, IEnumerable<Term> terms, out DynamicParameters parameters)
         {
-            IEnumerable<WhereClauseTerm> included;
+            IEnumerable<Term> included;
             string result = WhereClauseBase(prepend, terms, out included);
 
             parameters = new DynamicParameters();
-            foreach (WhereClauseTerm term in included) parameters.Add(term.GetParameterName(), term.Value);
+            foreach (Term term in included) parameters.Add(term.GetParameterName(), term.Value);
 
             return result;
         }
-    }
 
-    public class WhereClauseTerm
-    {        
-        public string Expression { get; set; }
-        public object Value { get; set; }
-
-        public WhereClauseTerm(object value, string expression)
-        {     
-            Expression = expression;
-            Value = value;
-        }
-
-        public string GetParameterName()
+        public class Term
         {
-            return GetParameterName(Expression);
-        }
+            public string Expression { get; set; }
+            public object Value { get; set; }
 
-        public static string GetParameterName(string expression)
-        {
-            // thanks to http://stackoverflow.com/questions/307929/regex-for-parsing-sql-parameters
-            var matches = Regex.Matches(expression, "@([a-zA-Z][a-zA-Z0-9_]*)");
-            return matches.OfType<Match>().Select(m => m.Value).ToArray().First();
+            public Term(object value, string expression)
+            {
+                Expression = expression;
+                Value = value;
+            }
+
+            public string GetParameterName()
+            {
+                return GetParameterName(Expression);
+            }
+
+            public static string GetParameterName(string expression)
+            {
+                // thanks to http://stackoverflow.com/questions/307929/regex-for-parsing-sql-parameters
+                var matches = Regex.Matches(expression, "@([a-zA-Z][a-zA-Z0-9_]*)");
+                return matches.OfType<Match>().Select(m => m.Value).ToArray().First();
+            }
         }
     }
 }
