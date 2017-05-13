@@ -10,6 +10,8 @@ namespace Test
     [TestClass]
     public class DbObjects
     {
+        const string _connectionString = "Data Source=localhost; Database=PostulateTest;Integrated Security=SSPI";
+
         const string _dbObjectQuery =
             @"SELECT 
 				SCHEMA_NAME([schema_id]) AS [Schema], [name] AS [Name], [object_id] AS [ObjectId]
@@ -26,7 +28,7 @@ namespace Test
         [TestMethod]
         public void GetDbObjects()
         {
-            using (SqlConnection cn = new SqlConnection("Data Source=localhost;Database=PostulateTest;Integrated Security=SSPI"))
+            using (SqlConnection cn = new SqlConnection(_connectionString))
             {
                 cn.Open();
                 var objects = cn.DynamicQuery<DbObject>(_dbObjectQuery, new { schema = "", tableName = "Org", columnName = "" });
@@ -47,6 +49,17 @@ namespace Test
             WHERE [name] LIKE '%'+@table+'%'			    		
 			ORDER BY 
 				[name]"));
+        }
+
+        [TestMethod]
+        public void DynamicQueryFromDictionary()
+        {
+            using (SqlConnection cn = new SqlConnection(_connectionString))
+            {
+                cn.Open();
+                var results = cn.DynamicQuery<DbObject>(_dbObjectQuery, new { column = "ReorderQty" }.ToDictionary());
+                Assert.IsTrue(results.Count() == 1);
+            }
         }
     }
 

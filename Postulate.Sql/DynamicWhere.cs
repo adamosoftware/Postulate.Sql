@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -13,6 +14,13 @@ namespace Postulate.Sql
     public static class DynamicWhere
     {
         internal const string WhereReplaceToken = "{*}";
+
+        public static IEnumerable<T> DynamicQuery<T>(
+            this IDbConnection connection, string query, Dictionary<string, object> parameters,
+            IDbTransaction transaction = null, bool buffered = true, int? commandTimeout = null, CommandType? commandType = null)
+        {
+            return connection.Query<T>(BuildQuery(query, parameters), parameters.ToObject(), transaction, buffered, commandTimeout, commandType);
+        }
 
         public static IEnumerable<T> DynamicQuery<T>(
             this IDbConnection connection, string query, object parameters, 
@@ -103,6 +111,16 @@ namespace Postulate.Sql
         {
             Dictionary<string, object> props = ToDictionary(parameters);
             return ParseWhereBlock(sql, props, out queryTemplate, out prepend);
+        }
+
+        public static object ToObject(this Dictionary<string, object> dictionary)
+        {
+            // thanks to http://stackoverflow.com/questions/7595416/convert-dictionarystring-object-to-anonymous-object
+
+            var expando = new ExpandoObject();
+            var properties = (ICollection<KeyValuePair<string, object>>)expando;
+            foreach (var keyPair in dictionary) properties.Add(keyPair);
+            return expando;
         }
 
         public static Dictionary<string, object> ToDictionary(this object @object)
