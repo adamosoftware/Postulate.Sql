@@ -226,7 +226,7 @@ namespace Postulate.Sql.Abstract
                 foreach (var pi in GetType().GetProperties().Where(pi => pi.HasAttribute<WhereAttribute>(attr => attr.TestValue != null)))
                 {
                     context = $"Property: {pi.Name}";
-                    WhereAttribute attr = pi.GetCustomAttributes(false).OfType<WhereAttribute>().First();
+                    WhereAttribute attr = pi.GetAttribute<WhereAttribute>();
                     pi.SetValue(this, attr.TestValue);
                     results = Execute(connection);
                 }
