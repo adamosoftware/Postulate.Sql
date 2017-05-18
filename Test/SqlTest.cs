@@ -86,6 +86,44 @@ namespace Testing
                 Assert.IsTrue(results.Any());
             }
         }
+
+        [TestMethod]
+        public void TestPagedQuery()
+        {
+            string query = "SELECT * FROM sys.tables";
+            string pagedQuery = PagedQuery.Build(query, "[name]", 10, 1);
+            Assert.IsTrue(pagedQuery.Equals("WITH [source] AS (SELECT ROW_NUMBER() OVER(ORDER BY [name]) AS [RowNumber], * FROM sys.tables) SELECT * FROM [source] WHERE [RowNumber] BETWEEN 11 AND 20;"));
+        }
+
+        [TestMethod]
+        public void TestFKRefDynamicWhereQuery()
+        {
+            string query = @"SELECT 
+                [fk].[name] AS [ConstraintName], 
+                SCHEMA_NAME([parent].[schema_id]) AS [ReferencedSchema],
+                [parent].[name] AS [ReferencedTable],
+                [refdcol].[name] AS [ReferencedColumn],
+                SCHEMA_NAME([child].[schema_id]) AS [ReferencingSchema], 
+                [child].[name] AS [ReferencingTable],
+                [rfincol].[name] AS [ReferncingColumn]
+            FROM 
+                [sys].[foreign_keys] [fk] INNER JOIN [sys].[tables] [child] ON [fk].[parent_object_id]=[child].[object_id]
+                INNER JOIN [sys].[tables] [parent] ON [fk].[referenced_object_id]=[parent].[object_id]
+                INNER JOIN [sys].[foreign_key_columns] [fkcol] ON [fk].[parent_object_id]=[fkcol].[parent_object_id]        
+                INNER JOIN [sys].[columns] [refdcol] ON 
+                    [fkcol].[referenced_column_id]=[refdcol].[column_id] AND
+                    [fkcol].[referenced_object_id]=[refdcol].[object_id]
+                INNER JOIN [sys].[columns] [rfincol] ON 
+                    [fkcol].[parent_column_id]=[rfincol].[column_id] AND
+                    [fkcol].[parent_object_id]=[rfincol].[object_id]";
+
+            using (SqlConnection cn = GetConnection())
+            {
+                cn.Open();
+                var results = cn.DynamicQuery<ForeignKeyInfo>(query, null);
+                Assert.IsTrue(results.Any());
+            }
+        }
     }
 
     internal class TableInfo
@@ -93,6 +131,17 @@ namespace Testing
         public string Schema { get; set; }
         public string Name { get; set; }
         public int ObjectId { get; set; }
+    }
+
+    internal class ForeignKeyInfo
+    {
+        public string ConstraintName { get; set; }
+        public string ReferencedSchema { get; set; }
+        public string ReferencedTable { get; set; }
+        public string ReferencedColumn { get; set; }
+        public string ReferencingSchema { get; set; }
+        public string ReferencingTable { get; set; }
+        public string ReferencingColumn { get; set; }
     }
 
 }

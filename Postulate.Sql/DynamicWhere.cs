@@ -19,7 +19,7 @@ namespace Postulate.Sql
             this IDbConnection connection, string query, Dictionary<string, object> parameters,
             IDbTransaction transaction = null, bool buffered = true, int? commandTimeout = null, CommandType? commandType = null)
         {
-            return connection.Query<T>(BuildQuery(query, parameters), parameters.ToObject(), transaction, buffered, commandTimeout, commandType);
+            return connection.Query<T>(BuildQuery(query, parameters), parameters?.ToObject(), transaction, buffered, commandTimeout, commandType);
         }
 
         public static IEnumerable<T> DynamicQuery<T>(
@@ -47,8 +47,15 @@ namespace Postulate.Sql
             string queryTemplate, prepend;
             var terms = ParseWhereBlock(sql, parameters, out queryTemplate, out prepend);
             
-            IEnumerable<Term> includedTerms;
-            return queryTemplate.Replace(WhereReplaceToken, WhereClauseBase(prepend, terms, out includedTerms));            
+            if (terms != null)
+            {
+                IEnumerable<Term> includedTerms;
+                return queryTemplate.Replace(WhereReplaceToken, WhereClauseBase(prepend, terms, out includedTerms));
+            }
+            else
+            {
+                return sql;
+            }
         }
 
         public static string AndClause(IEnumerable<Term> terms, out DynamicParameters parameters)
@@ -72,12 +79,12 @@ namespace Postulate.Sql
             foreach (string blockStart in prependMap.Keys)
             {
                 var startMatch = Regex.Match(sql, blockStart + @"\s*{\s*{");
-                if (startMatch != null)
+                if (startMatch?.Success ?? false)
                 {
                     prepend = prependMap[blockStart];
                     int leftIndex = startMatch.Index;
                     var endMatch = Regex.Match(sql.Substring(startMatch.Index + startMatch.Length), @"}\s*}");
-                    if (endMatch != null)
+                    if (endMatch?.Success ?? false)
                     {
                         int rightIndex = leftIndex + startMatch.Length + endMatch.Index + endMatch.Length;
                         List<Term> terms = new List<Term>();
