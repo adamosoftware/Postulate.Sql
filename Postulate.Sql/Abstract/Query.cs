@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Dapper;
 using System.Linq;
 using Postulate.Extensions;
-using Postulate.Attributes;
+using Postulate.Sql.Attributes;
 using ReflectionHelper;
 
 namespace Postulate.Sql.Abstract

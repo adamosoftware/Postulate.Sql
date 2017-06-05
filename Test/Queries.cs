@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Postulate;
-using Postulate.Attributes;
+using Postulate.Sql.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Data;

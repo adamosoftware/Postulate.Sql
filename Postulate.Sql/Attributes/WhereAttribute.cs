@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Postulate.Attributes
+namespace Postulate.Sql.Attributes
 {
     /// <summary>
     /// Defines a WHERE clause expression that is appended to a query
