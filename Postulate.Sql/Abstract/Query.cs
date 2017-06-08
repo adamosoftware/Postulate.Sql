@@ -18,12 +18,12 @@ namespace Postulate.Sql.Abstract
     public abstract class Query<TResult>
     {
         private readonly string _sql;
-        private readonly Func<IDbConnection> _connectionGetter;        
+        private readonly Func<IDbConnection> _connectionGetter;
 
         public Query(string sql, Func<IDbConnection> connectionGetter)
         {
             _sql = sql;
-            _connectionGetter = connectionGetter;            
+            _connectionGetter = connectionGetter;
         }
 
         public string Sql { get { return _sql; } }
@@ -39,45 +39,42 @@ namespace Postulate.Sql.Abstract
 
         private string ResolveQuery(int sortIndex)
         {
-            const string orderByToken = "{orderBy}";
-            const string whereToken = "{where}";
-            const string andWhereToken = "{andWhere}";
-
             string result = _sql;
 
-            if (result.Contains(orderByToken))
+            if (result.Contains(StringExtensions.OrderByToken))
             {
                 if (sortIndex > -1)
                 {
-                    if (!result.Contains(orderByToken) || SortOptions == null) throw new ArgumentException("To use the Query sortIndex argument, the SortOptions property must be set, and \"{orderBy}\" must appear in the SQL command.");
-                    result = result.Replace(orderByToken, $"ORDER BY {GetSortOption(sortIndex)}");
+                    if (!result.Contains(StringExtensions.OrderByToken) || SortOptions == null) throw new ArgumentException("To use the Query sortIndex argument, the SortOptions property must be set, and \"{orderBy}\" must appear in the SQL command.");
+                    result = result.Replace(StringExtensions.OrderByToken, $"ORDER BY {GetSortOption(sortIndex)}");
                 }
                 else
                 {
-                    result = result.Replace(orderByToken, string.Empty);
-                }                
+                    result = result.Replace(StringExtensions.OrderByToken, string.Empty);
+                }
             }
 
             Dictionary<string, string> whereBuilder = new Dictionary<string, string>()
             {
-                { whereToken, "WHERE" }, // query has no where clause, so it needs the word WHERE inserted
-                { andWhereToken, "AND" } // query already contains a WHERE clause, we're just adding to it
+                { StringExtensions.WhereToken, "WHERE" }, // query has no where clause, so it needs the word WHERE inserted
+                { StringExtensions.AndWhereToken, "AND" } // query already contains a WHERE clause, we're just adding to it
             };
             string token;
-            if (result.ContainsAny(new string[] { whereToken, andWhereToken }, out token))
+            if (result.ContainsAny(new string[] { StringExtensions.WhereToken, StringExtensions.AndWhereToken }, out token))
             {
                 bool anyCriteria = false;
                 List<string> terms = new List<string>();
-                var props = GetType().GetProperties().Where(pi => pi.HasAttribute<WhereAttribute>());
-                foreach (var pi in props)
-                {                    
-                    WhereAttribute whereAttr = pi.GetCustomAttributes(false).OfType<WhereAttribute>().First();
+                var baseProps = GetType().BaseType.GetProperties().Select(pi => pi.Name);
+                foreach (var pi in GetType().GetProperties().Where(pi => !baseProps.Contains(pi.Name)))
+                {
                     object value = pi.GetValue(this);
                     if (value != null)
                     {
-                        terms.Add(whereAttr.Expression);
+                        WhereAttribute whereAttr = pi.GetAttribute<WhereAttribute>();
+                        string expression = (whereAttr != null) ? whereAttr.Expression : $"[{pi.Name}]=@{pi.Name}";
+                        terms.Add(expression);
                         anyCriteria = true;
-                    }                    
+                    }
                 }
                 result = result.Replace(token, (anyCriteria) ? $"{whereBuilder[token]} {string.Join(" AND ", terms)}" : string.Empty);
             }
@@ -141,7 +138,7 @@ namespace Postulate.Sql.Abstract
         public IEnumerable<TResult> Execute(int sortIndex, int pageSize, int pageNumber)
         {
             return Execute(GetSortOption(sortIndex), pageSize, pageNumber);
-        }        
+        }
 
         public async Task<IEnumerable<TResult>> ExecuteAsync(int sortIndex = -1)
         {
@@ -214,7 +211,7 @@ namespace Postulate.Sql.Abstract
         {
             string context = "No arguments";
             try
-            {                
+            {
                 var results = Execute(connection);
 
                 if (SortOptions != null)

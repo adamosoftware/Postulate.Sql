@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Postulate.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,8 @@ namespace Postulate.Sql
         {
             int startRecord = (pageNumber * pageSize) + 1;
             int endRecord = (pageNumber * pageSize) + pageSize;
-            return $"WITH [source] AS ({InsertRowNumberColumn(query, orderBy)}) SELECT * FROM [source] WHERE [RowNumber] BETWEEN {startRecord} AND {endRecord};";
+            string result = $"WITH [source] AS ({InsertRowNumberColumn(query, orderBy)}) SELECT * FROM [source] WHERE [RowNumber] BETWEEN {startRecord} AND {endRecord};";
+            return result.ClearTokens();
         }
 
         private static string InsertRowNumberColumn(string query, string orderBy)

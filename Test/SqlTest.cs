@@ -40,7 +40,7 @@ namespace Testing
 
         private static IEnumerable<TableInfo> InnerQuery(IDbConnection cn, string tableName, string columnName)
         {
-            DynamicParameters p;            
+            DynamicParameters p;
             var results = cn.Query<TableInfo>(
                 $@"SELECT 
 					    SCHEMA_NAME([schema_id]) AS [Schema], [name] AS [Name], [object_id] AS [ObjectId]
@@ -77,7 +77,7 @@ namespace Testing
 
         [TestMethod]
         public void DynamicQueryForTable()
-        {            
+        {
             using (IDbConnection cn = GetConnection())
             {
                 cn.Open();
