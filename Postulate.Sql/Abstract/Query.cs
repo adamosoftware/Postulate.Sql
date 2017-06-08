@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 using System.Linq;
-using Postulate.Extensions;
 using Postulate.Sql.Attributes;
 using ReflectionHelper;
+using Postulate.Sql.Extensions;
 
 namespace Postulate.Sql.Abstract
 {
@@ -19,6 +19,7 @@ namespace Postulate.Sql.Abstract
     {
         private readonly string _sql;
         private readonly Func<IDbConnection> _connectionGetter;
+        private string _resolvedSql;
 
         public Query(string sql, Func<IDbConnection> connectionGetter)
         {
@@ -27,6 +28,8 @@ namespace Postulate.Sql.Abstract
         }
 
         public string Sql { get { return _sql; } }
+
+        public string ResolvedSql {  get { return _resolvedSql; } }
 
         public int CommandTimeout { get; set; } = 30;
 
@@ -41,31 +44,32 @@ namespace Postulate.Sql.Abstract
         {
             string result = _sql;
 
-            if (result.Contains(StringExtensions.OrderByToken))
+            if (result.Contains(InternalStringExtensions.OrderByToken))
             {
                 if (sortIndex > -1)
                 {
-                    if (!result.Contains(StringExtensions.OrderByToken) || SortOptions == null) throw new ArgumentException("To use the Query sortIndex argument, the SortOptions property must be set, and \"{orderBy}\" must appear in the SQL command.");
-                    result = result.Replace(StringExtensions.OrderByToken, $"ORDER BY {GetSortOption(sortIndex)}");
+                    if (!result.Contains(InternalStringExtensions.OrderByToken) || SortOptions == null) throw new ArgumentException("To use the Query sortIndex argument, the SortOptions property must be set, and \"{orderBy}\" must appear in the SQL command.");
+                    result = result.Replace(InternalStringExtensions.OrderByToken, $"ORDER BY {GetSortOption(sortIndex)}");
                 }
                 else
                 {
-                    result = result.Replace(StringExtensions.OrderByToken, string.Empty);
+                    result = result.Replace(InternalStringExtensions.OrderByToken, string.Empty);
                 }
             }
 
             Dictionary<string, string> whereBuilder = new Dictionary<string, string>()
             {
-                { StringExtensions.WhereToken, "WHERE" }, // query has no where clause, so it needs the word WHERE inserted
-                { StringExtensions.AndWhereToken, "AND" } // query already contains a WHERE clause, we're just adding to it
+                { InternalStringExtensions.WhereToken, "WHERE" }, // query has no where clause, so it needs the word WHERE inserted
+                { InternalStringExtensions.AndWhereToken, "AND" } // query already contains a WHERE clause, we're just adding to it
             };
             string token;
-            if (result.ContainsAny(new string[] { StringExtensions.WhereToken, StringExtensions.AndWhereToken }, out token))
+            if (result.ContainsAny(new string[] { InternalStringExtensions.WhereToken, InternalStringExtensions.AndWhereToken }, out token))
             {
                 bool anyCriteria = false;
                 List<string> terms = new List<string>();
                 var baseProps = GetType().BaseType.GetProperties().Select(pi => pi.Name);
-                foreach (var pi in GetType().GetProperties().Where(pi => !baseProps.Contains(pi.Name)))
+                var builtInParams = _sql.GetParameterNames(true).Select(p => p.ToLower());
+                foreach (var pi in GetType().GetProperties().Where(pi => !baseProps.Contains(pi.Name) && !builtInParams.Contains(pi.Name.ToLower())))
                 {
                     object value = pi.GetValue(this);
                     if (value != null)
@@ -79,6 +83,7 @@ namespace Postulate.Sql.Abstract
                 result = result.Replace(token, (anyCriteria) ? $"{whereBuilder[token]} {string.Join(" AND ", terms)}" : string.Empty);
             }
 
+            _resolvedSql = result;
             return result;
         }
 

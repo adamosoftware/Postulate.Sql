@@ -123,7 +123,7 @@ namespace Testing
                 var results = cn.DynamicQuery<ForeignKeyInfo>(query, null);
                 Assert.IsTrue(results.Any());
             }
-        }
+        }        
     }
 
     internal class TableInfo

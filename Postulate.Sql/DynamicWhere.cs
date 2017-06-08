@@ -1,11 +1,10 @@
 ﻿using Dapper;
+using Postulate.Sql.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Dynamic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -191,7 +190,7 @@ namespace Postulate.Sql
             public static string GetParameterName(string expression)
             {
                 // thanks to http://stackoverflow.com/questions/307929/regex-for-parsing-sql-parameters
-                var matches = Regex.Matches(expression, "@([a-zA-Z][a-zA-Z0-9_]*)");
+                var matches = Regex.Matches(expression, InternalStringExtensions.SqlParamRegex);
                 return matches.OfType<Match>().Select(m => m.Value).ToArray().First();
             }
         }

@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Testing.Models;
 using Postulate.Sql.Abstract;
+using Postulate.Sql.Extensions;
 
 namespace Testing
 {
@@ -90,6 +91,40 @@ namespace Testing
             Assert.IsTrue(results.Any());
         }
 
+        [TestMethod]
+        public void TestGetParameterNamesDefault()
+        {
+            var query = "SELECT [Id] FROM [Somewhere] WHERE [Something]=@this AND [OtherThing]=@that";
+            var paramNames = query.GetParameterNames();
+            Assert.IsTrue(paramNames.SequenceEqual(new string[] { "@this", "@that" }));
+        }
+
+        [TestMethod]
+        public void TestGetParameterNamesCleaned()
+        {
+            var query = "SELECT [Id] FROM [Somewhere] WHERE [Something]=@this AND [OtherThing]=@that";
+            var paramNames = query.GetParameterNames(true);
+            Assert.IsTrue(paramNames.SequenceEqual(new string[] { "this", "that" }));
+        }
+
+        [TestMethod]
+        public void QueryWithBuiltInParams()
+        {
+            var items = new ItemsWhereOrg();
+            items.OrgId = 1;
+            var results = items.Execute();
+            Assert.IsTrue(items.ResolvedSql.Equals("SELECT * FROM [Item] WHERE [OrganizationId]=@orgId  ORDER BY [Name]"));
+        }
+
+        [TestMethod]
+        public void QueryWithBuiltInAndAddedParams()
+        {
+            var items = new ItemsWhereOrg();
+            items.OrgId = 1;
+            items.Name = "whatever";
+            var results = items.Execute();
+            Assert.IsTrue(items.ResolvedSql.Equals("SELECT * FROM [Item] WHERE [OrganizationId]=@orgId AND [Name] LIKE '%'+@name+'%' ORDER BY [Name]"));
+        }
     }
 
     public class PostulateQuery<TResult> : Query<TResult>
@@ -151,6 +186,18 @@ namespace Testing
         }
 
         [Where("[Name] LIKE '%' + @name + '%'")]
+        public string Name { get; set; }
+    }
+
+    public class ItemsWhereOrg : PostulateQuery<Item>
+    {
+        public ItemsWhereOrg() : base("SELECT * FROM [Item] WHERE [OrganizationId]=@orgId {andWhere} ORDER BY [Name]")
+        {
+        }
+
+        public int OrgId { get; set; }
+
+        [Where("[Name] LIKE '%'+@name+'%'")]
         public string Name { get; set; }
     }
 

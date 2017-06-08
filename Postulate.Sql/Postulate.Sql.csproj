@@ -50,6 +50,7 @@
     <Compile Include="Abstract\Query.cs" />
     <Compile Include="Attributes\WhereAttribute.cs" />
     <Compile Include="Extensions\SqlConnectionExtensions.cs" />
+    <Compile Include="Extensions\InternalStringExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="PagedQuery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
