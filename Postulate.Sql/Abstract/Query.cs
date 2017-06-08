@@ -76,7 +76,7 @@ namespace Postulate.Sql.Abstract
                     object value = pi.GetValue(this);
                     if (value != null) terms.Add(whereAttr.Expression);
                 }
-                result = result.Replace(whereToken, (anyCriteria) ? $"{whereBuilder[token]} {string.Join(" AND ", terms)}" : string.Empty);
+                result = result.Replace(token, (anyCriteria) ? $"{whereBuilder[token]} {string.Join(" AND ", terms)}" : string.Empty);
             }
 
             return result;
