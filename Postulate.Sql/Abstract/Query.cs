@@ -70,11 +70,14 @@ namespace Postulate.Sql.Abstract
                 List<string> terms = new List<string>();
                 var props = GetType().GetProperties().Where(pi => pi.HasAttribute<WhereAttribute>());
                 foreach (var pi in props)
-                {
-                    anyCriteria = true;
+                {                    
                     WhereAttribute whereAttr = pi.GetCustomAttributes(false).OfType<WhereAttribute>().First();
                     object value = pi.GetValue(this);
-                    if (value != null) terms.Add(whereAttr.Expression);
+                    if (value != null)
+                    {
+                        terms.Add(whereAttr.Expression);
+                        anyCriteria = true;
+                    }                    
                 }
                 result = result.Replace(token, (anyCriteria) ? $"{whereBuilder[token]} {string.Join(" AND ", terms)}" : string.Empty);
             }
