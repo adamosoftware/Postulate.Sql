@@ -1,5 +1,4 @@
-﻿using Postulate;
-using Postulate.Abstract;
+﻿using Postulate.Orm;
 using System;
 using System.Collections.Generic;
 using System.Data;

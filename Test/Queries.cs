@@ -58,15 +58,17 @@ namespace Testing
         [TestMethod]
         public void OrgsWhere()
         {
-            Organization org = new Organization() { Name = "Sample Org For You", BillingRate = 1 };
-
             var db = new PostulateDb();
+            
+            Organization org = new Organization() { Name = "Sample Org For You", BillingRate = 1 };
+            db.DeleteOneWhere<Organization>("[Name]=@name", org);
+
             db.Save(org);
 
             var orgs = new OrgsWhere() { Name = "sample" }.Execute();
             Assert.IsTrue(orgs.Any());
 
-            db.Delete<Organization>(org.Id);
+            db.DeleteOne<Organization>(org.Id);
         }
 
         [TestMethod]
