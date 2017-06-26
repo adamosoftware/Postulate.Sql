@@ -1,5 +1,7 @@
 # Postulate.Sql
 
+Nuget package: **Postulate.Sql**
+
 I created this package as a refactoring of parts of [PostulateORM](https://github.com/adamosoftware/PostulateORM) to make query and SQL-related features available on their own. This package has three main attractions:
 
 - [DynamicWhere](https://github.com/adamosoftware/Postulate.Sql/blob/master/Postulate.Sql/DynamicWhere.cs) is used for building and executing queries with WHERE clauses determined by the parameters passed to the query.
@@ -32,3 +34,7 @@ Use the `PagedQuery.Build` method to turn an ordinary select query into one that
 returns
 
     WITH [source] AS (SELECT ROW_NUMBER() OVER(ORDER BY [name]) AS [RowNumber], * FROM sys.tables) SELECT * FROM [source] WHERE [RowNumber] BETWEEN 11 AND 20;
+    
+## Using Query&lt;TResult&gt;
+
+Provides a way to use inline SQL while keeping it isolated from your application. More info to come soon....
