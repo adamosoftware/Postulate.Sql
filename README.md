@@ -34,3 +34,7 @@ Use the `PagedQuery.Build` method to turn an ordinary select query into one that
 returns
 
     WITH [source] AS (SELECT ROW_NUMBER() OVER(ORDER BY [name]) AS [RowNumber], * FROM sys.tables) SELECT * FROM [source] WHERE [RowNumber] BETWEEN 11 AND 20;
+    
+## Using Query&lt;TResult&gt;
+
+Provides a way to use inline SQL while keeping it isolated from your application. More info to come soon....
