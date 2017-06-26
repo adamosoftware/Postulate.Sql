@@ -1,5 +1,7 @@
 # Postulate.Sql
 
+Nuget package: **Postulate.Sql**
+
 I created this package as a refactoring of parts of [PostulateORM](https://github.com/adamosoftware/PostulateORM) to make query and SQL-related features available on their own. This package has three main attractions:
 
 - [DynamicWhere](https://github.com/adamosoftware/Postulate.Sql/blob/master/Postulate.Sql/DynamicWhere.cs) is used for building and executing queries with WHERE clauses determined by the parameters passed to the query.
