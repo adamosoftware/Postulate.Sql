@@ -220,6 +220,15 @@ namespace Postulate.Sql.Abstract
             return await connection.QuerySingleOrDefaultAsync<TResult>(_sql, this, commandType: CommandType);
         }
 
+        public void Test()
+        {
+            using (var cn = _connectionGetter.Invoke())
+            {
+                cn.Open();
+                Test(cn);
+            }
+        }
+
         public void Test(IDbConnection connection)
         {
             string context = "No arguments";
