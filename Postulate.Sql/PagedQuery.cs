@@ -1,5 +1,6 @@
 ﻿using Postulate.Sql.Extensions;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Postulate.Sql
 {
@@ -16,8 +17,15 @@ namespace Postulate.Sql
         private static string InsertRowNumberColumn(string query, string orderBy)
         {
             StringBuilder sb = new StringBuilder(query);
-            int insertPoint = query.ToLower().IndexOf("select ") + "select ".Length;
-            sb.Insert(insertPoint, $"ROW_NUMBER() OVER(ORDER BY {orderBy}) AS [RowNumber], ");
+
+            var matches = Regex.Matches(query, @"select\s", RegexOptions.IgnoreCase);
+            if (matches.Count > 0)
+            {
+                var first = matches[0];
+                int insertPoint = first.Length + 1;
+                sb.Insert(insertPoint, $"ROW_NUMBER() OVER(ORDER BY {orderBy}) AS [RowNumber], ");
+            }
+
             return sb.ToString();
         }
     }

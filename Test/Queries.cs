@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Testing.Models;
 using Postulate.Sql.Abstract;
 using Postulate.Sql.Extensions;
+using Postulate.Sql;
 
 namespace Testing
 {
@@ -69,7 +70,7 @@ namespace Testing
             Assert.IsTrue(orgs.Any());
 
             db.DeleteOne<Organization>(org.Id);
-        }
+        }        
 
         [TestMethod]
         public void QueryTestMethod()
@@ -126,6 +127,63 @@ namespace Testing
             items.Name = "whatever";
             var results = items.Execute();
             Assert.IsTrue(items.ResolvedSql.Equals("SELECT * FROM [Item] WHERE [OrganizationId]=@orgId AND [Name] LIKE '%'+@name+'%' ORDER BY [Name]"));
+        }
+
+        [TestMethod]
+        public void BuildPagedQuery()
+        {
+            var srcQuery = @"SELECT
+				[a].[Name] AS [LiveAccount],
+				[a].[Key] AS [LiveKey],
+				[a].[BackupName] AS [BackupAccount],
+				[a].[BackupKey] AS [BackupKey],
+				[b].[AccountId],
+				[b].[Container],
+				COALESCE([v].[SourceName], [b].[Path]) AS [DestinationName],
+				[v].[Name] AS [SourceName],
+				CONVERT(bit, CASE
+					WHEN [b].[LatestVersionId]=[v].[Id] THEN 1
+					ELSE 0
+				END) AS [IsLatestVersion],
+				[v].[Number] AS [Version],
+				[v].[DateModified],
+				[v].[DateArchived],
+				[v].[Id] AS [VersionId],
+				[rp].[ErrorDateTime],
+				[rp].[ErrorMessage],
+				[rp].[Id]
+			FROM
+				[dbo].[RestorePending] [rp] INNER JOIN [dbo].[Version] [v] ON [rp].[VersionId]=[v].[Id]
+				INNER JOIN [dbo].[Blob] [b] ON [v].[BlobId]=[b].[Id]
+				INNER JOIN [dbo].[Account] [a] ON [b].[AccountId]=[a].[Id]
+			{orderBy}";
+            var newQuery = PagedQuery.Build(srcQuery, "[v].[SourceName]", 100, 0);
+
+            Assert.IsTrue(newQuery.Equals(@"WITH [source] AS (SELECT
+ROW_NUMBER() OVER(ORDER BY [v].[SourceName]) AS [RowNumber], 				[a].[Name] AS [LiveAccount],
+				[a].[Key] AS [LiveKey],
+				[a].[BackupName] AS [BackupAccount],
+				[a].[BackupKey] AS [BackupKey],
+				[b].[AccountId],
+				[b].[Container],
+				COALESCE([v].[SourceName], [b].[Path]) AS [DestinationName],
+				[v].[Name] AS [SourceName],
+				CONVERT(bit, CASE
+					WHEN [b].[LatestVersionId]=[v].[Id] THEN 1
+					ELSE 0
+				END) AS [IsLatestVersion],
+				[v].[Number] AS [Version],
+				[v].[DateModified],
+				[v].[DateArchived],
+				[v].[Id] AS [VersionId],
+				[rp].[ErrorDateTime],
+				[rp].[ErrorMessage],
+				[rp].[Id]
+			FROM
+				[dbo].[RestorePending] [rp] INNER JOIN [dbo].[Version] [v] ON [rp].[VersionId]=[v].[Id]
+				INNER JOIN [dbo].[Blob] [b] ON [v].[BlobId]=[b].[Id]
+				INNER JOIN [dbo].[Account] [a] ON [b].[AccountId]=[a].[Id]
+			) SELECT * FROM [source] WHERE [RowNumber] BETWEEN 1 AND 100;"));
         }
     }
 

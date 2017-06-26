@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Postulate.Sql")]
-[assembly: AssemblyDescription("Helper methods for SQL generation")]
+[assembly: AssemblyDescription("A strong-typed query framework with helpers for SQL generation")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Adam O'Neil Software")]
 [assembly: AssemblyProduct("Postulate.Sql")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.15.0")]
-[assembly: AssemblyFileVersion("1.0.15.0")]
+[assembly: AssemblyVersion("1.0.16.0")]
+[assembly: AssemblyFileVersion("1.0.16.0")]

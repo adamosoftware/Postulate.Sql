@@ -42,20 +42,27 @@ namespace Postulate.Sql.Abstract
 
         private string ResolveQuery(int sortIndex)
         {
-            string result = _sql;
+            string query = _sql;
 
-            if (result.Contains(InternalStringExtensions.OrderByToken))
+            if (query.Contains(InternalStringExtensions.OrderByToken))
             {
                 if (sortIndex > -1)
                 {
-                    if (!result.Contains(InternalStringExtensions.OrderByToken) || SortOptions == null) throw new ArgumentException("To use the Query sortIndex argument, the SortOptions property must be set, and \"{orderBy}\" must appear in the SQL command.");
-                    result = result.Replace(InternalStringExtensions.OrderByToken, $"ORDER BY {GetSortOption(sortIndex)}");
+                    if (!query.Contains(InternalStringExtensions.OrderByToken) || SortOptions == null) throw new ArgumentException("To use the Query sortIndex argument, the SortOptions property must be set, and \"{orderBy}\" must appear in the SQL command.");
+                    query = query.Replace(InternalStringExtensions.OrderByToken, $"ORDER BY {GetSortOption(sortIndex)}");
                 }
                 else
                 {
-                    result = result.Replace(InternalStringExtensions.OrderByToken, string.Empty);
+                    query = query.Replace(InternalStringExtensions.OrderByToken, string.Empty);
                 }
             }
+
+            return BuildWhereClause(query);
+        }
+
+        private string BuildWhereClause(string query)
+        {
+            string result = query;
 
             Dictionary<string, string> whereBuilder = new Dictionary<string, string>()
             {
@@ -84,6 +91,7 @@ namespace Postulate.Sql.Abstract
             }
 
             _resolvedSql = result;
+
             return result;
         }
 
@@ -121,8 +129,8 @@ namespace Postulate.Sql.Abstract
         }
 
         public IEnumerable<TResult> Execute(IDbConnection connection, string orderBy, int pageSize, int pageNumber)
-        {
-            string query = PagedQuery.Build(_sql, orderBy, pageSize, pageNumber);
+        {            
+            string query = PagedQuery.Build(BuildWhereClause(_sql), orderBy, pageSize, pageNumber);
             return connection.Query<TResult>(query, this);
         }
 
@@ -156,12 +164,12 @@ namespace Postulate.Sql.Abstract
 
         public async Task<IEnumerable<TResult>> ExecuteAsync(IDbConnection connection, int sortIndex = -1)
         {
-            return await connection.QueryAsync<TResult>(_sql, this, commandType: CommandType);
+            return await connection.QueryAsync<TResult>(ResolveQuery(sortIndex), this, commandType: CommandType);
         }
 
         public async Task<IEnumerable<TResult>> ExecuteAsync(IDbConnection connection, string orderBy, int pageSize, int pageNumber)
         {
-            string query = PagedQuery.Build(_sql, orderBy, pageSize, pageNumber);
+            string query = PagedQuery.Build(BuildWhereClause(_sql), orderBy, pageSize, pageNumber);
             return await connection.QueryAsync<TResult>(query, this);
         }
 

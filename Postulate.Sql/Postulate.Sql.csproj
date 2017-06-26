@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Abstract\Query.cs" />
+    <Compile Include="Attributes\ParameterAttribute.cs" />
     <Compile Include="Attributes\WhereAttribute.cs" />
     <Compile Include="Extensions\SqlConnectionExtensions.cs" />
     <Compile Include="Extensions\InternalStringExtensions.cs" />
