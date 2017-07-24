@@ -202,8 +202,8 @@ namespace Postulate.Sql.Abstract
         }
 
         public TResult ExecuteSingle(IDbConnection connection)
-        {
-            return connection.QuerySingleOrDefault<TResult>(_sql, this, commandType: CommandType);
+        {            
+            return connection.QuerySingleOrDefault<TResult>(ResolveQuery(0), this, commandType: CommandType);
         }
 
         public async Task<TResult> ExecuteSingleAsync()
