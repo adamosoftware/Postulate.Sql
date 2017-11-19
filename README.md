@@ -1,5 +1,7 @@
 # Postulate.Sql
 
+Note: as of 11/19/17, I am deprecating this package and moving the Query class to [Postulate.Orm.Abstract.Query](https://github.com/adamosoftware/Postulate.Orm/blob/master/PostulateV1/Abstract/Query.cs)
+
 Nuget package: **Postulate.Sql**
 
 I created this package as a refactoring of parts of [PostulateORM](https://github.com/adamosoftware/PostulateORM) to make query and SQL-related features available on their own. This package has three main attractions:
